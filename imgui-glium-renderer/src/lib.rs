@@ -196,8 +196,8 @@ impl Renderer {
                                 &uniform! {
                                     matrix: matrix,
                                     tex: self.lookup_texture(texture_id)?.sampled()
-                                        .minify_filter(MinifySamplerFilter::Linear)
-                                        .magnify_filter(MagnifySamplerFilter::Linear)
+                                        .minify_filter(MinifySamplerFilter::Nearest)
+                                        .magnify_filter(MagnifySamplerFilter::Nearest)
                                 },
                                 &DrawParameters {
                                     blend: Blend::alpha_blending(),
