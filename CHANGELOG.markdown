@@ -4,9 +4,37 @@
 
 ### Added
 
+- Add `ChildWindow::movable`
+
+### Changed
+
+- Upgrade to cimgui / imgui 1.74
+- Bump minimum Rust version to 1.38 (at least backtrace crate requires it)
+
+### Removed
+
+- Various things that were deprecated in imgui-rs 0.2.0
+
+### Fixed
+
+- Fix toggling behavior on using `MenuItem::build_with_ref` and
+  `Selectable::build_with_ref`.
+
+## [0.2.1] - 2019-09-09
+
+### Fixed
+
+- Fix backspace handling on macOS
+- Fix ImageButton bool return value
+
+## [0.2.0] - 2019-09-07
+
+### Added
+
 - Window scrolling API
 - Full support for the column API
 - Almost all small utility functions from upstream API
+- Support for winit 0.20 alpha via `winit-20` feature
 
 ### Changed
 
@@ -30,6 +58,8 @@
 - Container widget tokens *must be ended manually by calling end*.
   Closure-based function (e.g. build()) are unaffected and do this
   automatically
+- Bump minimum Rust version to 1.36 (some dependencies, including winit, require MaybeUninit)
+- Upgrade to cimgui / imgui 1.72b
 
 ### Removed
 
@@ -495,7 +525,9 @@ by setting the environment variable `WINIT_HIDPI_FACTOR=1` if you use X11.
 
 - Initial release with cimgui/imgui 1.44, glium 0.9
 
-[Unreleased]: https://github.com/Gekkio/imgui-rs/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Gekkio/imgui-rs/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Gekkio/imgui-rs/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/Gekkio/imgui-rs/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Gekkio/imgui-rs/compare/v0.0.23...v0.1.0
 [0.0.23]: https://github.com/Gekkio/imgui-rs/compare/v0.0.22...v0.0.23
 [0.0.22]: https://github.com/Gekkio/imgui-rs/compare/v0.0.21...v0.0.22

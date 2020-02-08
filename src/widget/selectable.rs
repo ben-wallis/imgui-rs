@@ -16,6 +16,8 @@ bitflags!(
         const ALLOW_DOUBLE_CLICK = sys::ImGuiSelectableFlags_AllowDoubleClick;
         /// Cannot be selected, display greyed out text
         const DISABLED = sys::ImGuiSelectableFlags_Disabled;
+        /// (WIP) Hit testing to allow subsequent willdgets to overlap this one
+        const ALLOW_ITEM_OVERLAP = sys::ImGuiSelectableFlags_AllowItemOverlap;
     }
 );
 
@@ -121,7 +123,7 @@ impl<'a> Selectable<'a> {
     /// Builds the selectable using a mutable reference to selected state.
     pub fn build_with_ref(self, ui: &Ui, selected: &mut bool) -> bool {
         if self.selected(*selected).build(ui) {
-            *selected = true;
+            *selected = !*selected;
             true
         } else {
             false

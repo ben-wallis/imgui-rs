@@ -26,7 +26,11 @@ pub struct ImString(pub(crate) Vec<u8>);
 impl ImString {
     /// Creates a new `ImString` from an existing string.
     pub fn new<T: Into<String>>(value: T) -> ImString {
-        unsafe { ImString::from_utf8_unchecked(value.into().into_bytes()) }
+        unsafe {
+            let mut s = ImString::from_utf8_unchecked(value.into().into_bytes());
+            s.refresh_len();
+            s
+        }
     }
     /// Creates a new empty `ImString` with a particular capacity
     pub fn with_capacity(capacity: usize) -> ImString {
@@ -57,9 +61,12 @@ impl ImString {
     }
     /// Appends a given string slice to the end of this `ImString`
     pub fn push_str(&mut self, string: &str) {
-        self.refresh_len();
-        self.0.extend_from_slice(string.as_bytes());
+        self.0.pop();
+        self.0.extend(string.bytes());
         self.0.push(b'\0');
+        unsafe {
+            self.refresh_len();
+        }
     }
     /// Returns the capacity of this `ImString` in bytes
     pub fn capacity(&self) -> usize {
@@ -81,22 +88,25 @@ impl ImString {
     pub fn reserve_exact(&mut self, additional: usize) {
         self.0.reserve_exact(additional);
     }
+    /// Returns a raw pointer to the underlying buffer
     pub fn as_ptr(&self) -> *const c_char {
-        self.0.as_ptr() as *const _
+        self.0.as_ptr() as *const c_char
     }
-    pub fn as_mut_ptr(&mut self) -> *mut c_char {
-        self.0.as_mut_ptr() as *mut _
-    }
-    /// Updates the buffer length based on the current contents.
+    /// Returns a raw mutable pointer to the underlying buffer.
     ///
-    /// Dear imgui accesses pointers directly, so the length doesn't get updated when the contents
-    /// change. This is normally OK, because Deref to ImStr always calculates the slice length
-    /// based on contents. However, we need to refresh the length in some ImString functions.
-    pub(crate) fn refresh_len(&mut self) {
-        let len = self.to_str().len();
-        unsafe {
-            self.0.set_len(len);
-        }
+    /// If the underlying data is modified, `refresh_len` *must* be called afterwards.
+    pub fn as_mut_ptr(&mut self) -> *mut c_char {
+        self.0.as_mut_ptr() as *mut c_char
+    }
+    /// Updates the underlying buffer length based on the current contents.
+    ///
+    /// This function *must* be called if the underlying data is modified via a pointer
+    /// obtained by `as_mut_ptr`.
+    pub unsafe fn refresh_len(&mut self) {
+        let len = CStr::from_ptr(self.0.as_ptr() as *const c_char)
+            .to_bytes_with_nul()
+            .len();
+        self.0.set_len(len);
     }
 }
 
@@ -108,7 +118,7 @@ impl<'a> Default for ImString {
 
 impl From<String> for ImString {
     fn from(s: String) -> ImString {
-        unsafe { ImString::from_utf8_unchecked(s.into_bytes()) }
+        ImString::new(s)
     }
 }
 
@@ -177,10 +187,25 @@ impl Deref for ImString {
     type Target = ImStr;
     fn deref(&self) -> &ImStr {
         // as_ptr() is used, because we need to look at the bytes to figure out the length
-        // self.0.len() is incorrect, because there might be more than one nul byte in the end
+        // self.0.len() is incorrect, because there might be more than one nul byte in the end, or
+        // some interior nuls in the data
         unsafe {
             &*(CStr::from_ptr(self.0.as_ptr() as *const c_char) as *const CStr as *const ImStr)
         }
+    }
+}
+
+impl fmt::Write for ImString {
+    #[inline]
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.push_str(s);
+        Ok(())
+    }
+
+    #[inline]
+    fn write_char(&mut self, c: char) -> fmt::Result {
+        self.push(c);
+        Ok(())
     }
 }
 
@@ -190,7 +215,7 @@ pub struct ImStr(CStr);
 
 impl<'a> Default for &'a ImStr {
     fn default() -> &'a ImStr {
-        static SLICE: &'static [u8] = &[0];
+        static SLICE: &[u8] = &[0];
         unsafe { ImStr::from_utf8_with_nul_unchecked(SLICE) }
     }
 }
@@ -265,4 +290,70 @@ impl ToOwned for ImStr {
     fn to_owned(&self) -> ImString {
         ImString(self.0.to_owned().into_bytes())
     }
+}
+
+#[test]
+fn test_imstring_constructors() {
+    let s = ImString::new("test");
+    assert_eq!(s.0, b"test\0");
+
+    let s = ImString::with_capacity(100);
+    assert_eq!(s.0, b"\0");
+
+    let s = unsafe { ImString::from_utf8_unchecked(vec![b't', b'e', b's', b't']) };
+    assert_eq!(s.0, b"test\0");
+
+    let s = unsafe { ImString::from_utf8_with_nul_unchecked(vec![b't', b'e', b's', b't', b'\0']) };
+    assert_eq!(s.0, b"test\0");
+}
+
+#[test]
+fn test_imstring_operations() {
+    let mut s = ImString::new("test");
+    s.clear();
+    assert_eq!(s.0, b"\0");
+    s.push('z');
+    assert_eq!(s.0, b"z\0");
+    s.push('ä');
+    assert_eq!(s.0, b"z\xc3\xa4\0");
+    s.clear();
+    s.push_str("imgui-rs");
+    assert_eq!(s.0, b"imgui-rs\0");
+    s.push_str("öä");
+    assert_eq!(s.0, b"imgui-rs\xc3\xb6\xc3\xa4\0");
+}
+
+#[test]
+fn test_imstring_fmt_write() {
+    use std::fmt::Write;
+    let mut s = ImString::default();
+    let _ = write!(s, "format {:02x}", 0x42);
+    assert_eq!(s.0, b"format 42\0");
+}
+
+#[test]
+fn test_imstring_refresh_len() {
+    let mut s = ImString::new("testing");
+    unsafe {
+        let mut ptr = s.as_mut_ptr() as *mut u8;
+        ptr = ptr.wrapping_add(2);
+        *ptr = b'z';
+        ptr = ptr.wrapping_add(1);
+        *ptr = b'\0';
+    }
+    assert_eq!(s.0, b"tez\0ing\0");
+    unsafe { s.refresh_len() };
+    assert_eq!(s.0, b"tez\0");
+}
+
+#[test]
+fn test_imstring_interior_nul() {
+    let s = ImString::new("test\0ohno");
+    assert_eq!(s.0, b"test\0");
+    assert_eq!(s.to_str(), "test");
+    assert!(!s.is_empty());
+
+    let s = ImString::new("\0ohno");
+    assert_eq!(s.to_str(), "");
+    assert!(s.is_empty());
 }

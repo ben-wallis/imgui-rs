@@ -117,7 +117,7 @@ impl NavInput {
         NavInput::TweakFast,
     ];
     /// Amount of internal/hidden variants (not exposed by imgui-rs)
-    const INTERNAL_COUNT: usize = 6;
+    const INTERNAL_COUNT: usize = 5;
     /// Total count of `NavInput` variants
     pub const COUNT: usize = sys::ImGuiNavInput_COUNT as usize - NavInput::INTERNAL_COUNT;
 }
@@ -196,6 +196,10 @@ pub struct Io {
     ///
     /// Windows without a title bar are not affected.
     pub config_windows_move_from_title_bar_only: bool,
+    /// Compact window memory usage when unused.
+    ///
+    /// Set to -1.0 to disable.
+    pub config_windows_memory_compact_timer: f32,
 
     pub(crate) backend_platform_name: *const c_char,
     pub(crate) backend_renderer_name: *const c_char,

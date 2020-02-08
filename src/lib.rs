@@ -85,7 +85,7 @@ pub fn dear_imgui_version() -> &'static str {
 
 #[test]
 fn test_version() {
-    assert_eq!(dear_imgui_version(), "1.71");
+    assert_eq!(dear_imgui_version(), "1.74");
 }
 
 impl Context {
@@ -109,7 +109,7 @@ pub struct Ui<'ui> {
     font_atlas: Option<cell::RefMut<'ui, SharedFontAtlas>>,
 }
 
-static FMT: &'static [u8] = b"%s\0";
+static FMT: &[u8] = b"%s\0";
 
 fn fmt_ptr() -> *const c_char {
     FMT.as_ptr() as *const c_char
@@ -229,20 +229,24 @@ impl<T> From<*mut T> for Id<'static> {
 
 // Widgets: Input
 impl<'ui> Ui<'ui> {
+    #[must_use]
     pub fn input_text<'p>(&self, label: &'p ImStr, buf: &'p mut ImString) -> InputText<'ui, 'p> {
         InputText::new(self, label, buf)
     }
+    #[must_use]
     pub fn input_text_multiline<'p>(
         &self,
         label: &'p ImStr,
         buf: &'p mut ImString,
         size: [f32; 2],
     ) -> InputTextMultiline<'ui, 'p> {
-        InputTextMultiline::new(self, label, buf, size.into())
+        InputTextMultiline::new(self, label, buf, size)
     }
+    #[must_use]
     pub fn input_float<'p>(&self, label: &'p ImStr, value: &'p mut f32) -> InputFloat<'ui, 'p> {
         InputFloat::new(self, label, value)
     }
+    #[must_use]
     pub fn input_float2<'p>(
         &self,
         label: &'p ImStr,
@@ -250,6 +254,7 @@ impl<'ui> Ui<'ui> {
     ) -> InputFloat2<'ui, 'p> {
         InputFloat2::new(self, label, value)
     }
+    #[must_use]
     pub fn input_float3<'p>(
         &self,
         label: &'p ImStr,
@@ -257,6 +262,7 @@ impl<'ui> Ui<'ui> {
     ) -> InputFloat3<'ui, 'p> {
         InputFloat3::new(self, label, value)
     }
+    #[must_use]
     pub fn input_float4<'p>(
         &self,
         label: &'p ImStr,
@@ -264,15 +270,19 @@ impl<'ui> Ui<'ui> {
     ) -> InputFloat4<'ui, 'p> {
         InputFloat4::new(self, label, value)
     }
+    #[must_use]
     pub fn input_int<'p>(&self, label: &'p ImStr, value: &'p mut i32) -> InputInt<'ui, 'p> {
         InputInt::new(self, label, value)
     }
+    #[must_use]
     pub fn input_int2<'p>(&self, label: &'p ImStr, value: &'p mut [i32; 2]) -> InputInt2<'ui, 'p> {
         InputInt2::new(self, label, value)
     }
+    #[must_use]
     pub fn input_int3<'p>(&self, label: &'p ImStr, value: &'p mut [i32; 3]) -> InputInt3<'ui, 'p> {
         InputInt3::new(self, label, value)
     }
+    #[must_use]
     pub fn input_int4<'p>(&self, label: &'p ImStr, value: &'p mut [i32; 4]) -> InputInt4<'ui, 'p> {
         InputInt4::new(self, label, value)
     }
@@ -280,9 +290,11 @@ impl<'ui> Ui<'ui> {
 
 // Widgets: Drag
 impl<'ui> Ui<'ui> {
+    #[must_use]
     pub fn drag_float<'p>(&self, label: &'p ImStr, value: &'p mut f32) -> DragFloat<'ui, 'p> {
         DragFloat::new(self, label, value)
     }
+    #[must_use]
     pub fn drag_float2<'p>(
         &self,
         label: &'p ImStr,
@@ -290,6 +302,7 @@ impl<'ui> Ui<'ui> {
     ) -> DragFloat2<'ui, 'p> {
         DragFloat2::new(self, label, value)
     }
+    #[must_use]
     pub fn drag_float3<'p>(
         &self,
         label: &'p ImStr,
@@ -297,6 +310,7 @@ impl<'ui> Ui<'ui> {
     ) -> DragFloat3<'ui, 'p> {
         DragFloat3::new(self, label, value)
     }
+    #[must_use]
     pub fn drag_float4<'p>(
         &self,
         label: &'p ImStr,
@@ -304,6 +318,7 @@ impl<'ui> Ui<'ui> {
     ) -> DragFloat4<'ui, 'p> {
         DragFloat4::new(self, label, value)
     }
+    #[must_use]
     pub fn drag_float_range2<'p>(
         &self,
         label: &'p ImStr,
@@ -312,18 +327,23 @@ impl<'ui> Ui<'ui> {
     ) -> DragFloatRange2<'ui, 'p> {
         DragFloatRange2::new(self, label, current_min, current_max)
     }
+    #[must_use]
     pub fn drag_int<'p>(&self, label: &'p ImStr, value: &'p mut i32) -> DragInt<'ui, 'p> {
         DragInt::new(self, label, value)
     }
+    #[must_use]
     pub fn drag_int2<'p>(&self, label: &'p ImStr, value: &'p mut [i32; 2]) -> DragInt2<'ui, 'p> {
         DragInt2::new(self, label, value)
     }
+    #[must_use]
     pub fn drag_int3<'p>(&self, label: &'p ImStr, value: &'p mut [i32; 3]) -> DragInt3<'ui, 'p> {
         DragInt3::new(self, label, value)
     }
+    #[must_use]
     pub fn drag_int4<'p>(&self, label: &'p ImStr, value: &'p mut [i32; 4]) -> DragInt4<'ui, 'p> {
         DragInt4::new(self, label, value)
     }
+    #[must_use]
     pub fn drag_int_range2<'p>(
         &self,
         label: &'p ImStr,
@@ -362,8 +382,6 @@ impl<'ui> Ui<'ui> {
     ///         });
     ///     }
     /// }
-    /// # fn main() {
-    /// # }
     /// ```
     pub fn tooltip<F: FnOnce()>(&self, f: F) {
         unsafe { sys::igBeginTooltip() };
@@ -384,8 +402,6 @@ impl<'ui> Ui<'ui> {
     ///         ui.tooltip_text("I'm a tooltip!");
     ///     }
     /// }
-    /// # fn main() {
-    /// # }
     /// ```
     pub fn tooltip_text<T: AsRef<str>>(&self, text: T) {
         self.tooltip(|| self.text(text));
@@ -425,6 +441,7 @@ impl<'ui> Ui<'ui> {
     ///     }
     /// });
     /// ```
+    #[must_use]
     pub fn popup_modal<'p>(&self, str_id: &'p ImStr) -> PopupModal<'ui, 'p> {
         PopupModal::new(self, str_id)
     }
@@ -444,10 +461,8 @@ impl<'ui> Ui<'ui> {
         items: &'p [&'p StringType],
         height_in_items: i32,
     ) -> bool {
-        let items_inner: Vec<*const c_char> = items
-            .into_iter()
-            .map(|item| item.as_ref().as_ptr())
-            .collect();
+        let items_inner: Vec<*const c_char> =
+            items.iter().map(|item| item.as_ref().as_ptr()).collect();
         unsafe {
             sys::igListBoxStr_arr(
                 label.as_ptr(),
@@ -461,12 +476,14 @@ impl<'ui> Ui<'ui> {
 }
 
 impl<'ui> Ui<'ui> {
+    #[must_use]
     pub fn plot_lines<'p>(&self, label: &'p ImStr, values: &'p [f32]) -> PlotLines<'ui, 'p> {
         PlotLines::new(self, label, values)
     }
 }
 
 impl<'ui> Ui<'ui> {
+    #[must_use]
     pub fn plot_histogram<'p>(
         &self,
         label: &'p ImStr,
@@ -532,6 +549,7 @@ impl<'ui> Ui<'ui> {
     ///     let draw_list = ui.get_window_draw_list();
     /// }
     /// ```
+    #[must_use]
     pub fn get_window_draw_list(&'ui self) -> WindowDrawList<'ui> {
         WindowDrawList::new(self)
     }
@@ -559,6 +577,7 @@ pub enum Condition {
 #[repr(i32)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Direction {
+    None = sys::ImGuiDir_None,
     Left = sys::ImGuiDir_Left,
     Right = sys::ImGuiDir_Right,
     Up = sys::ImGuiDir_Up,
